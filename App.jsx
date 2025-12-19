@@ -7,7 +7,10 @@
 import React, { useState } from 'react';
 import { StatusBar, StyleSheet, useColorScheme, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import { Header } from "./src/component/panahsc/Header";
+import { BottomNav } from "./src/component/panahsc/BottomNav";
+import { SearchModal } from "./src/component/panahsc/SearxhModal";
+import { NotificationPanel } from "./src/component/panahsc/NotificationPanel";
 // Page Imports
 import { HomePage } from "./src/pages/HomePage";
 import { ProductDetailPage } from "./src/pages/ProductDetailPage";
@@ -32,15 +35,18 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState('home');
   const [activeTab, setActiveTab] = useState('home');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+ 
   const [favorites, setFavorites] = useState(new Set([1, 2, 9]));
   const [orders, setOrders] = useState(mockOrders);
   const [notifications, setNotifications] = useState(mockNotifications);
   
   
+    // Modals
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   // Mock counts
   const cartCount = 2;
-  const unreadNotifications = 1;
+  const unreadNotifications = notifications.filter(n => !n.read).length;
 
   // --- HANDLERS ---
   const handleProductClick = (product) => {
@@ -52,7 +58,14 @@ function AppContent() {
     setSelectedProduct(null);
     setCurrentPage('home');
   };
-
+  const handleMarkAsRead = (id) => {
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    );
+  };
+  const handleClearAll = () => {
+    setNotifications([]);
+  };
   const getPageTitle = () => {
     if (currentPage === 'product-detail') return 'Product Details';
     return 'Panahsc'; 
@@ -70,7 +83,7 @@ function AppContent() {
         notificationCount={unreadNotifications}
         onCartClick={() => console.log('Cart clicked')}
         onSearchClick={() => setIsSearchOpen(true)}
-        onNotificationClick={() => console.log('Notif clicked')}
+        onNotificationClick={() => setIsNotificationOpen(true)}
       />
 
       {/* MAIN CONTENT AREA */}
@@ -97,29 +110,26 @@ function AppContent() {
         )}
       </View>
 
+      <BottomNav
+        activeTab={currentPage}
+        onTabChange={setCurrentPage}
+      />
+          {/* Modals (Overlay the entire application) */}
+          <SearchModal
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+        />
+        <NotificationPanel
+          isOpen={isNotificationOpen}
+          onClose={() => setIsNotificationOpen(false)}
+          notifications={notifications}
+          onMarkAsRead={() => handleMarkAsRead()}
+          onClearAll={() => handleClearAll()}
+        />
+
     </View>
   );
 }
-
-// --- SIMPLE HEADER COMPONENT (To match your props) ---
-const Header = ({ title, showBack, onBack, cartCount, onCartClick }) => (
-  <View style={styles.headerContainer}>
-    <View style={styles.headerLeft}>
-      {showBack && (
-        <TouchableOpacity onPress={onBack} style={styles.iconButton}>
-          <Text style={styles.iconText}>←</Text>
-        </TouchableOpacity>
-      )}
-      <Text style={styles.headerTitle}>{title}</Text>
-    </View>
-    
-    <View style={styles.headerRight}>
-      <TouchableOpacity onPress={onCartClick} style={styles.iconButton}>
-        <Text style={styles.iconText}>🛒 {cartCount > 0 ? `(${cartCount})` : ''}</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-);
 
 const styles = StyleSheet.create({
   container: {
